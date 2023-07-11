@@ -1,0 +1,799 @@
+---
+title: 'Infancia en riesgo: Un abordaje integral de la mortalidad infantil a nivel
+  global'
+date: "2023-06-29"
+output:
+  rmdformats::readthedown
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+
+### Grupo 1% Estadística 99% Fe
+
+**Integrantes**
+
+● María José Marrou Rivera (20171088)
+
+● Daniel Andre Silva Philipps (20207549)
+
+● Edgar Luna Salazar (20197127)
+
+● Jose Navarro Nateros (20202279)
+
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(rmdformats)
+```
+
+# Objetivo del reporte
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(rio)
+mor=import("Mortalidad.xlsx")
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(ggplot2)
+library(dplyr)
+library(rnaturalearth)
+library(stringr)
+library(dplyr)
+library(rnaturalearth)
+
+# Obtener los nombres únicos de los países en el conjunto de datos "mor"
+paises_mor <- unique(mor$Pais)
+
+# Obtener los nombres únicos de los países en el conjunto de datos del mapa mundial
+paises_mapa <- unique(map_data("world")$region)
+
+# Identificar los países que están en "mor" pero no en el mapa mundial
+paises_no_coinciden <- setdiff(paises_mor, paises_mapa)
+
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+# Cargar la biblioteca 'maps'
+library(maps)
+
+# Obtener los datos de los mapas mundiales
+datos_mapa <- map_data("world")
+
+# Obtener los nombres únicos de los países
+paises_mapa <- unique(datos_mapa$region)
+
+```
+
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(ggplot2)
+library(dplyr)
+library(rnaturalearth)
+library(stringr)
+
+# Cargar el conjunto de datos de los polígonos del mapa mundial
+world_map <- map_data("world")
+
+# Ajustes de nombres en el conjunto de datos "mor"
+mor$Paises <- str_trim(mor$Paises)
+mor$Paises <- case_when(mor$Paises == "United States" ~ "USA",
+                      mor$Paises == "Antigua and Barbuda" ~ "Antigua",
+                      mor$Paises == "Argelia" ~ "Algeria",
+                      mor$Paises == "Bahamas. The" ~ "Bahamas",
+                      mor$Paises == "British Virgin Islands" ~ "Virgin Islands",
+                      mor$Paises == "Burma" ~ "Myanmar",
+                      mor$Paises == "Cabo Verde" ~ "Cape Verde",
+                      mor$Paises == "Cocos (Keeling) Islands" ~ "Cocos Islands",
+                      mor$Paises == "Central African Rep." ~ "Central African Republic",
+                      mor$Paises == "Congo. Democratic Republic" ~ "Democratic Republic of the Congo",
+                      mor$Paises == "Congo. Republic of the" ~ "Republic of Congo",
+                      mor$Paises == "Cote d'Ivoire" ~ "Ivory Coast",
+                      mor$Paises == "Czech Rep." ~ "Czech Republic",
+                      mor$Paises == "Dominican Rep." ~ "Dominican Republic",
+                      mor$Paises == "Eswatini" ~ "Swaziland",
+                      mor$Paises == "Falkland Islands (Islas Malvis)" ~ "Falkland Islands",
+                      mor$Paises == "Gambia. The" ~ "Gambia",
+                      mor$Paises == "Korea. North" ~ "North Korea",
+                      mor$Paises == "Korea. South" ~ "South Korea",
+                      mor$Paises == "Lao PDR" ~ "Laos",
+                      mor$Paises == "Marshall Is." ~ "Marshall Islands",
+                      mor$Paises == "Nabimia" ~ "Namibia",
+                      mor$Paises == "Occupied Palestinian territory" ~ "Palestine",
+                      mor$Paises == "Saint Helena, Ascension, and Tristan da Cunha" ~ "Saint Helena",
+                      mor$Paises == "Saint Kitts and Nevis" ~ "Saint Kitts",
+                      mor$Paises == "Saint Vincent and the Gredines" ~ "Saint Vincent",
+                      mor$Paises == "São Tomé and Principe" ~ "Sao Tome and Principe",
+                      mor$Paises== "Solomon Is." ~ "Solomon Islands",
+                      mor$Paises == "S. Sudan" ~ "South Sudan",
+                      mor$Paises == "Trinidad and tobago" ~ "Trinidad and Tobago",
+                      mor$Paises == "Turkey (Turkiye)" ~ "Turkey",
+                      mor$Paises == "Wallis and Futu" ~ "Wallis and Futuna",
+                      mor$Paises == "United Kingdom" ~ "UK",
+                      TRUE ~ mor$Paises)
+
+# Verificar los cambios
+paises12 <- unique(mor$Paises)
+
+
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(ggplot2)
+library(rnaturalearth)
+
+# Unir los datos del mapa con los datos de "mor" utilizando el nombre del país como clave de unión
+world_map <- left_join(world_map, mor, by = c("region" = "Paises"))
+
+# Filtrar la Antártida
+world_map <- world_map[world_map$region != "Antarctica", ]
+
+# Generar grupos basados en los rangos especificados
+breaks <- c(0, 10, 50, 100, Inf)
+labels <- c("< 10", "10 - 49", "50 - 99", ">= 100")
+world_map$Group <- cut(world_map$Mort, breaks = breaks, labels = labels, include.lowest = TRUE)
+
+# Generar el mapa utilizando ggplot2
+ggplot() +
+  geom_map(data = world_map, map = world_map,
+           aes(x = long, y = lat, map_id = region, fill = Group),
+           color = "white", size = 0.2) +
+  geom_map(data = world_map, map = world_map,
+           aes(x = long, y = lat, map_id = region),
+           color = "black", fill = NA, size = 0.5) +  # Contorno de los países
+  scale_fill_manual(values = c("< 10" = "#89FF99", "10 - 49" = "#F3FF91",
+                               "50 - 99" = "#FFCD91", ">= 100" = "#FC665D"),
+                    na.value = "gray") +
+  labs(fill = "Mortalidad infantil") +
+  theme_void() +
+  coord_equal(xlim = c(-180, 180), ylim = c(-90, 90)) +
+  theme(plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"),
+        plot.background = element_rect(fill = "transparent", color = NA))
+
+
+```
+
+La tasa de mortalidad infantil es un indicador fundamental para evaluar la salud de una población y está influenciada por diversos aspectos sociales, culturales y económicos (López et al., 1998). Reducir esta tasa ha sido una de las metas principales establecidas por las Naciones Unidas en los "Objetivos de Desarrollo del Milenio" en el año 2000, con una fecha límite en 2015 (United Nations). Progresivamente, se ha logrado un avance significativo en este aspecto, y de acuerdo con el informe del UN IGME (2021), es seguro afirmar que los niños tienen mayores posibilidades de sobrevivir hasta los 5 años en comparación con las cifras de 1990. Sin embargo, a pesar de estos avances, persisten brechas significativas entre los países desarrollados y aquellos en desarrollo en términos de mortalidad infantil. En este trabajo, el objetivo es identificar los factores que tienen mayor incidencia en la tasa de mortalidad infantil a nivel mundial, proporcionando información valiosa para la formulación de políticas y el diseño de intervenciones adecuadas.
+
+Para lograr dicha meta, se lleva a cabo un análisis del impacto de posibles variables explicativas en la mortalidad infantil utilizando un modelo de regresión gaussiana. Las variables consideradas en el modelo son la expectativa de vida (expvidnc), la desnutrición infantil (dsnt), la atención prenatal (atenpre) y el índice de saneamiento (indsan). Estas variables fueron seleccionadas debido a su alta correlación con la variable dependiente "Mortalidad Infantil" (Mort). Además, se emplea un análisis de conglomerados para organizar los casos en subconjuntos o grupos, utilizando la estrategia divisiva. Este análisis permite identificar patrones de similitud entre los casos y agruparlos en función de su similitud. Al combinar el modelo de regresión gaussiana y el análisis de conglomerados, se espera obtener una visión más completa de los factores que influyen en la mortalidad infantil y poder proporcionar información valiosa para la formulación de políticas y la implementación de intervenciones efectivas.
+
+
+# Construcción de la base de datos
+
+La base de datos fue construida mediante la integración de datos obtenidos de diversas fuentes. Principalmente, se utilizaron la página web oficial de la CIA en la sección "Guide to Country Comparisons", la base de datos del Banco Mundial y la base de datos de la Organización Mundial de la Salud. Todos los datos extraídos corresponden a la versión más actualizada disponible en cada una de estas bases de datos.
+
+Además, se asignaron abreviaturas a cada variable independiente y a la variable dependiente. A continuación, se presenta el significado de cada abreviatura, junto con la base de datos utilizada:
+
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+
+# Instalar y cargar el paquete 'knitr' y 'kableExtra'
+library(knitr)
+library(kableExtra)
+
+# Crear la tabla
+tabla_variables <- data.frame(
+  Variable = c("Mort", "Dsnt", "Car", "GastEdu", "Atenpre", "Polineq", "Sobrep", "Ginico", "Tasdesm", "Indsan", "Men5bp", "Expvidnc", "Emco2"),
+  Descripción = c("Índice de mortalidad infantil", "Desnutrición", "Infraestructura de carreteras", "Gasto en educación", "Atención médica prenatal", "Políticas de inclusión y equidad social", "Sobrepeso infantil", "Índice de Gini", "Tasa de desempleo", "Índice de saneamiento", "Niños menores de 5 años con bajo peso", "Expectativa de vida al nacer", "Emisiones de dióxido de carbono")
+)
+
+# Aplicar formato a la tabla
+tabla_formateada <- kable(tabla_variables, format = "html") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE)
+
+# Imprimir la tabla formateada
+print(tabla_formateada)
+
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(rio)
+mor=import("Mortalidad.xlsx")
+```
+
+## Base de datos
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(DT)
+
+# Crear la tabla con los datos de la base de datos "mor"
+tabla_datos <- datatable(mor, options = list(pageLength = 10))
+
+# Mostrar la tabla interactiva
+tabla_datos
+
+```
+
+Posteriormente, se realizó la selección de variables correspondientes al mejor modelo y se llevó a cabo el manejo de los valores faltantes (NA's) utilizando RStudio. Este procedimiento permitió eliminar aquellas observaciones que no disponían de datos para alguna de las variables incluidas en el análisis. De esta manera, se garantizó que los datos utilizados fueran completos y adecuados para el análisis.
+
+
+# Modelo de Regresión
+
+## **Descripción Univariada**
+
+En primer lugar, se lleva a cabo un análisis descriptivo que genera una tabla resumen de los datos. Este análisis descriptivo es fundamental, ya que proporciona información clave sobre las características de los datos, identifica posibles problemas o patrones existentes y facilita la comunicación de los resultados obtenidos. Al examinar de cerca las estadísticas descriptivas, como medidas de tendencia central, dispersión y distribución de los datos, se obtiene una comprensión más completa de la naturaleza de los datos y se pueden tomar decisiones informadas sobre el análisis posterior.
+
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(summarytools)
+library(tidyr)
+library(knitr)
+library(kableExtra)
+
+dfSummary(mor[,-1],
+          plain.ascii  = FALSE,
+          varnumbers = FALSE,
+          style        = "grid", 
+          graph.col=F,
+          na.col    = FALSE) %>%
+    kable(caption = "Descriptivos Univariados")%>%
+    kable_styling(full_width = F)
+    
+```
+
+## **Descripción Bivariada**
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(PerformanceAnalytics)
+chart.Correlation(as.matrix(mor[,c(2:14)]),histogram = TRUE,pch=13,na.rm = TRUE)
+```
+
+En la elaboración de los modelos de regresión, se consideran únicamente las variables independientes que presentan una correlación absoluta superior a 0.50 con la variable dependiente "Mortalidad infantil" (Mort). Sin embargo, se decide excluir la variable "Niños menores de 5 años con bajo peso" (Men5bp) debido a su alta similitud con la variable "Desnutrición" (Dsnt), lo que podría ocasionar problemas de multicolinealidad.
+
+En el modelo seleccionado se incluyen cuatro variables independientes: "Índice de saneamiento" (Indsan) y "Expectativa de vida al nacer" (Expvidnc), ya que presentan las correlaciones más fuertes con la mortalidad infantil (-0.81 y -0.91, respectivamente), "Desnutrición" (Dsnt) con una correlación de 0.64 y, por último, se incorpora la variable "Atención prenatal" (Atenpre), la cual muestra una correlación de -0.63 con la variable dependiente.
+
+## **Análisis de regresión**
+
+Hipótesis:
+
+> '*La mortalidad infantil*' en el mundo es afectada por *'el índice de
+> saneamiento, la expectativa de vida, la desnutrición infantil y la
+> atención prenatal dentro de un país*'.
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+mor <- mor[, c(1, 2, 5, 7, 9, 11, 14, ncol(mor))]
+mor$indsan.1=NULL
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+mor = na.omit(mor)
+```
+
+```{r}
+modelo3<-lm(Mort~indsan+ Expvidnc+ Dsnt+ atenpre, mor)
+summary(modelo3)
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(modelsummary)
+model1=list('Mort'=modelo3)
+modelsummary(model1, title = "Regresion",
+             stars = TRUE,
+             output = "kableExtra")
+
+
+```
+
+\
+
+Debido a que se obtiene un p-value menor a 0.05, se puede concluir que las variables independientes incluidas en el modelo tienen un impacto conjunto significativo en la variable dependiente. Además, el valor del R ajustado de 0.87 indica que el modelo tiene una buena capacidad para explicar la relación entre la variable dependiente (Mortalidad infantil) y las variables independientes consideradas (índice de saneamiento, expectativa de vida al nacer, desnutrición infantil y atención prenatal).
+
+En general, se puede concluir lo siguiente: (1) Tanto el índice de
+saneamiento (indsan) como la desnutrición infantil (Dsnt) no presentan
+una influencia significativa en la mortalidad infantil. (2) No obstante,
+tanto la expectativa de vida al nacer (Expvidnc) como la atención médica
+prenatal (atenpre) tienen un efecto estadísticamente significativo, con
+niveles de significancia de 0.001 y 0.01 respectivamente. (3) Por
+último, los coeficientes calculados para las variables Expvidnc y
+atenpre revelan un impacto inverso en la tasa de mortalidad infantil,
+dado que son negativos. Específicamente, se observa que la expectativa
+de vida al nacer tiene un efecto con una magnitud de -2.573, mientras
+que la atención médica prenatal tiene un efecto con una magnitud de
+-0.237. Estos resultados indican que un incremento de una unidad en
+ambas variables se asocia a una disminución de 2.573 y 0.237 unidades en
+la tasa de mortalidad infantil, respectivamente.
+
+Con base en estos resultados, se puede proponer la siguiente ecuación:
+
+```{=tex}
+\begin{equation}
+Mort = `r modelo3$coefficients[1]` + `r modelo3$coefficients[2]` \cdot indsan + `r modelo3$coefficients[3]`\cdot Expvidnc + `r modelo3$coefficients[4]`\cdot Dsnt + `r modelo3$coefficients[5]`\cdot atenpre + \epsilon 
+\end{equation}
+```
+
+
+## **Efecto de los regresores**
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(stargazer)
+library(modelsummary)
+modelo3b=formula(scale(Mort)~scale(indsan)+scale(Expvidnc)+scale(Dsnt)+scale(atenpre))
+reg3b=lm(modelo3b,mor)
+model3b=list('Mort'=reg3b)
+modelsummary(model3b, title = "Regresion: modelo con \n coeficientes estandarizados",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+De los resultados de la tabla, se observa que la variable Expvidnc es la
+que tiene el efecto más pronunciado en el modelo, seguida por atenpre.
+Estas dos variables son significativas en el modelo, lo que significa
+que tienen una relación estadísticamente significativa con la variable
+dependiente (Mort).
+
+## Diagnóstico de la regresión
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(car)
+library(lmtest)
+library(knitr)
+library(kableExtra)
+
+# Calcular diagnósticos
+linealidad <- mean(modelo3$residuals)
+homocedasticidad <- bptest(modelo3)$p.value
+normalidad <- shapiro.test(modelo3$residuals)$p.value
+multicolinealidad <- vif(modelo3)
+checModelo3 <- as.data.frame(influence.measures(modelo3)$is.inf)
+valores_influyentes <- checModelo3[checModelo3$cook.d & checModelo3$hat, ]
+
+# Crear tabla
+diagnosticos <- data.frame(
+  Diagnóstico = c("Linealidad", "Homocedasticidad", "Normalidad de residuos", "No multicolinealidad", "Valores influyentes"),
+  Prueba = c("Media", "Breusch-Pagan", "Shapiro Wilk", "VIF", "Distancia de Cook y Hat"),
+  Resultado = NA
+)
+
+# Asignar resultados a la columna de resultados
+diagnosticos$Resultado[diagnosticos$Diagnóstico == "Linealidad"] <- linealidad
+diagnosticos$Resultado[diagnosticos$Diagnóstico == "Homocedasticidad"] <- homocedasticidad
+diagnosticos$Resultado[diagnosticos$Diagnóstico == "Normalidad de residuos"] <- normalidad
+
+# Verificar si hay resultados para No multicolinealidad y Valores influyentes
+if (length(multicolinealidad) > 0) {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "No multicolinealidad"] <- paste(multicolinealidad, collapse = ", ")
+} else {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "No multicolinealidad"] <- "No se encontraron valores influyentes"
+}
+
+if (nrow(valores_influyentes) > 0) {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "Valores influyentes"] <- paste(valores_influyentes, collapse = "\n")
+} else {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "Valores influyentes"] <- "No se encontraron valores influyentes"
+}
+
+# Imprimir tabla con estilo
+tabla_diagnosticos <- kable(diagnosticos, col.names = c("Diagnóstico","Prueba", "Resultado"), align = "c") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
+print(tabla_diagnosticos)
+
+
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(knitr)
+library(kableExtra)
+
+# Calcular diagnósticos
+linealidad <- mean(modelo3$residuals)
+homocedasticidad <- bptest(modelo3)$p.value
+normalidad <- shapiro.test(modelo3$residuals)$p.value
+multicolinealidad <- vif(modelo3)
+valores_influyentes <- checModelo3[checModelo3$cook.d & checModelo3$hat, ]
+
+# Función para determinar el símbolo de check o equis
+check_symbol <- function(condition) {
+  if (condition) {
+    return("✔")
+  } else {
+    return("❌")
+  }
+}
+
+# Crear tabla
+diagnosticos <- data.frame(
+  Diagnóstico = c("Linealidad", "Homocedasticidad", "Normalidad de residuos", "No multicolinealidad", "Valores influyentes"),
+  Resultado = NA
+)
+
+# Asignar resultados a la columna de resultados
+diagnosticos$Resultado[diagnosticos$Diagnóstico == "Linealidad"] <- check_symbol(abs(linealidad) < 1e-5)
+
+if (!is.na(homocedasticidad)) {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "Homocedasticidad"] <- check_symbol(homocedasticidad > 0.05)
+} else {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "Homocedasticidad"] <- "No hay resultados disponibles"
+}
+
+if (!is.na(normalidad)) {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "Normalidad de residuos"] <- check_symbol(normalidad >= 0.05)
+} else {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "Normalidad de residuos"] <- "No hay resultados disponibles"
+}
+
+if (length(multicolinealidad) > 0) {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "No multicolinealidad"] <- check_symbol(all(multicolinealidad < 5))
+} else {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "No multicolinealidad"] <- "No hay resultados disponibles"
+}
+
+if (length(valores_influyentes) > 0) {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "Valores influyentes"] <- check_symbol(TRUE)
+} else {
+  diagnosticos$Resultado[diagnosticos$Diagnóstico == "Valores influyentes"] <- "✔"
+}
+
+# Imprimir tabla con estilo
+tabla_diagnosticos <- kable(diagnosticos, col.names = c("Diagnóstico", "Resultado"), align = "c") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
+print(tabla_diagnosticos)
+
+```
+
+En relación al diagnóstico de la regresión, es importante verificar que se cumplan los supuestos de linealidad, homocedasticidad y no multicolinealidad en el modelo de regresión lineal. Estos supuestos permiten asegurar la confiabilidad y precisión de los resultados obtenidos. En el presente estudio, se ha confirmado que se cumplen estos supuestos, además de no encontrar valores influyentes, lo que nos brinda confianza en la idoneidad del modelo para explicar la relación entre las variables predictoras y la variable de respuesta. Como adicional, se resalta que los datos no siguen una distribución normal.
+
+# Clusterización
+
+En el contexto de la hipótesis planteada sobre la mortalidad infantil y
+sus posibles factores influyentes, el análisis de conglomerados permite
+identificar países que presentan perfiles similares en cuanto a estas
+variables, lo que podría indicar relaciones o patrones comunes entre
+ellas y ayudar a comprender mejor los determinantes de la mortalidad
+infantil. Al agrupar países con características similares, se pueden
+obtener insights útiles para la formulación de políticas públicas o
+estrategias de intervención enfocadas en mejorar la salud y bienestar de
+los niños en diferentes regiones.
+
+Para la realización del analisis de conglomerados, se seleccionan las variables de expectativa de vida
+(Expvidnc), atención prenatal (atenpre) e índice de saneamiento (indsan)
+para nuestro análisis de conglomerados. Estas variables forman parte del modelo de correlación anterior. Además, se incluye
+la variable dependiente Mort y la variable Paises.
+
+Sin embargo, es importante destacar que se decide excluir la variable de
+desnutrición infantil (Dsnt) debido a las complicaciones que presentaba
+en el análisis de conglomerados. Esta variable mostraba una correlación
+negativa con las demás variables, por lo que, aunque se intentó invertir los rangos
+de la variable, la dirección de la correlación seguía siendo negativa y
+esto distorsionaba la interpretación de los resultados. De esta manera,
+se optó por no incluir la variable de desnutrición infantil en el
+análisis de conglomerados.
+
+## Preparación de los datos para la clusterización
+
+### Exploración de datos
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(rio)
+mor1=import("Mortalidad.xlsx")
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+mor1 <- mor1[, c(1,2,7,9,14)]
+mor1 = na.omit(mor1)
+```
+
+```{r}
+summary(mor1)
+```
+
+### Transformación de datos
+
+```{r warning=FALSE, message=FALSE, results='asis'}
+library(BBmisc)
+mor1[,c(3:6)]=normalize(mor1[,c(3:5)],method='standardize')
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+boxplot(normalize(mor[,c(3:5)],method='standardize'))
+```
+
+### Correlación
+
+Entre las variables tipificadas, se observan sus correlaciones:
+
+```{r}
+cor(mor1[, c(3:5)])
+```
+
+En este caso, no existen correlaciones negativas entre las
+variables, pero de haber incluido la variable de desnutrición,
+se tendría que invertir los rangos de dicha variable. No obstante,
+tal y como se mencionó con anterioridad, esta inversión habría
+dificultado la interpretación de los datos, por lo que se decidió omitir
+desnutrición en el análisis.
+
+
+### Matriz de distancia
+
+No se puede usar la columna Pais en la clusterización, pero tampoco debe perderse, por lo que se recomienda usar esos nombres en lugar del nombre de fila.
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+dataClus=mor1[, c(3:5)]
+row.names(dataClus)=mor1$Paises
+```
+
+Una vez están los datos en el objeto dataClus, se calcula la matriz de distancias entre los casos (paises)
+
+```{r}
+library(cluster)
+g.dist <- daisy(dataClus, metric = "gower")
+```
+
+## Estrategia de jerarquización divisiva
+
+### Gráfico de números óptimos de clusters
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(factoextra)
+fviz_nbclust(dataClus, hcut,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F,hc_func = "diana")
+```
+Dado que el resultado del estadístico de gap es 2, se determina la utilización de dos clusters.
+
+### Visualización de los clusters
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+set.seed(123)
+library(kableExtra)
+res.diana <- hcut(g.dist, k = 2,hc_func='diana')
+dataClus$diana=res.diana$cluster
+# veamos
+head(dataClus,15)%>%kbl%>%kable_styling()
+```
+
+### Dendograma
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+fviz_dend(res.diana, cex = 0.7, horiz = T, main = "")
+```
+
+En la estrategia jerárquica divisiva, un valor de "height" de 0.8 implica que los grupos se dividirán en subgrupos más pequeños cuando la distancia entre ellos supere ese umbral.
+
+### Silhouettes para DIANA
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+fviz_silhouette(res.diana,print.summary = F)
+```
+
+Un ASW de 0.61 indica que los clústeres tienen cierta separación y densidad, pero también puede haber algo de superposición o ambigüedad entre ellos. Esta métrica se utiliza para evaluar la calidad de los clústeres resultantes de un algoritmo de agrupamiento.
+
+Además, se aprecia que no hay países que estén peor clusterizados. Esto se
+puede corroborar mediante silDIANA.
+
+```{r}
+silDIANA=data.frame(res.diana$silinfo$widths)
+silDIANA$country=row.names(silDIANA)
+poorDIANA=silDIANA[silDIANA$sil_width<0,'country']%>%sort()
+poorDIANA
+```
+
+### Media de los clusters
+
+```{r}
+aggregate(.~ diana, data=dataClus,mean)
+```
+
+Se observa que el grupo 2 se considera mejor en términos de las variables selecciondas. Esto implica que el grupo 2 puede representar países con un mayor expectativa de vida, atención prenatal e índice de saneamiento.
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+mor1$dianaMorpoor=mor1$Paises%in%poorDIANA
+mor1$dianaMor=as.ordered(dataClus$diana)
+dataClus$diana=NULL
+```
+
+
+## Gráficos
+
+### Gráfico de DIANA
+
+Se asignan coordenadas a cada país mediante el uso de una matriz de
+distancia. Una vez aplicado, se obtendrán las coordenadas
+correspondientes a cada país. Estas coordenadas indicarán la posición de
+cada país en el plano bidimensional, y se espera que reflejen las
+distancias entre ellos según lo expresado en la matriz de distancia
+empleada.
+
+```{r}
+proyeccion = cmdscale(g.dist, k=2,add = T) 
+head(proyeccion$points,20)
+```
+
+Una vez calculada la proyección, se recuperan las coordenadas del mapa
+del mundo basado en dimensiones nuevas
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+mor1$dim1 <- proyeccion$points[,1]
+mor1$dim2 <- proyeccion$points[,2]
+```
+
+Entonces, se visualiza el mapa:
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(ggrepel)
+
+base <- ggplot(mor1, aes(x = dim1, y = dim2, label = row.names(dataClus))) +
+  geom_text_repel(size = 3, max.overlaps = 100, min.segment.length = unit(0, 'lines')) +
+  labs(x = "Dimensión 1", y = "Dimensión 2")
+base
+```
+
+Se colorea el mapa anterior según el cluster al que corresponden.
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(ggplot2)
+library(ggrepel)
+
+# Etiquetas para los países mal clusterizados
+DIANAlabels <- ifelse(mor1$dianaMorpoor, mor1$Paises, '')
+
+# Gráfico base
+base <- ggplot(mor1, aes(x = dim1, y = dim2)) +
+  scale_color_brewer(type = 'qual', palette = 'Dark2') +
+  labs(subtitle = "Se destacan los países mal clusterizados")
+
+# Gráfico de Diana
+dianaPlot <- base + 
+  geom_point(size = 3, aes(color = dianaMor)) +
+  labs(title = "DIANA") +
+  xlab("Dimensión 1") +
+  ylab("Dimensión 2") 
+
+# Etiquetas de países mal clusterizados
+dianaPlot + 
+  geom_text_repel(size = 4, aes(label = DIANAlabels),
+                  max.overlaps = 50, min.segment.length = unit(0, 'lines')) +
+  scale_color_manual(values = c("1" = "#B2182B", "2" = "#F4A582"), 
+                     labels = c("1" = "Países de alto riesgo ", "2" = "Países de bajo y medio riesgo")) +
+  guides(color = guide_legend(title = "Mortalidad Infantil"))  # Cambia el nombre de la leyenda
+
+```
+
+### Gráfica de Barras
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(ggplot2)
+
+# Crear datos para las barras
+datos <- data.frame(Categoria = c("Riesgo alto", "Riesgo moderado"),
+                    Valor = c(
+                      sum(mor1$dianaMor == 1),  # Cantidad de países de alto riesgo
+                      sum(mor1$dianaMor == 2)   # Cantidad de países de bajo y medio riesgo
+                    ))
+
+# Gráfico de barras
+barPlot <- ggplot(datos, aes(x = Categoria, y = Valor, fill = Categoria)) +
+  geom_bar(stat = "identity", color = "#999999", width = 0.5) +
+  geom_text(aes(label = Valor), vjust = -0.5, color = "black", size = 4, fontface = "bold") +
+  labs(title = "Mortalidad Infantil") +
+  xlab("Categoría") +
+  ylab("Cantidad de países") +
+  scale_fill_manual(values = c("Riesgo alto" = "#B2182B", "Riesgo moderado" = "#F4A582")) +
+  theme(legend.title = element_blank(),
+        panel.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text = element_text(color = "black"),
+        axis.title = element_text(color = "black", face = "bold"),
+        plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+        plot.subtitle = element_text(size = 14, hjust = 0.5))
+
+barPlot
+
+```
+
+En el siguiente gráfico de barras se muestra que hay una importante diferencia entre el número de países con un riesgo alto de mortalidad infantil (representado en color rojo) y el de países con un riesgo moderado (representado en color naranja). 
+
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(dplyr)
+library(rnaturalearth)
+library(stringr)
+
+# Eliminar espacios en blanco adicionales alrededor de los nombres de países
+mor1$Pais <- str_trim(mor1$Pais)
+
+# Renombrar los países según las especificaciones
+mor1$Pais <- case_when(mor1$Pais == "Cabo Verde" ~ "Cape Verde",
+  mor1$Pais == "Central African Republic" ~ "Central African Rep.",
+  mor1$Pais == "Congo. Democratic Republic" ~ "Dem. Rep. Congo",
+  mor1$Pais == "Congo. Republic of the" ~ "Congo",
+  mor1$Pais == "Cote d'Ivoire" ~ "Côte d'Ivoire",
+  mor1$Pais == "Czechia" ~ "Czech Rep.",
+  mor1$Pais == "Dominican Republic" ~ "Dominican Rep.",
+  mor1$Pais == "Eswatini" ~ "Swaziland",
+  mor1$Pais == "Gambia. The" ~ "Gambia",
+  mor1$Pais == "Korea. North" ~ "Dem. Rep. Korea",
+  mor1$Pais == "Laos" ~ "Lao PDR",
+  mor1$Pais == "Marshall Islands" ~ "Marshall Is.",
+  mor1$Pais == "Nabimia" ~ "Namibia",
+  mor1$Pais == "Sao Tome and Principe" ~ "São Tomé and Principe",
+  mor1$Pais == "Solomon Islands" ~ "Solomon Is.",
+  mor1$Pais == "South Sudan" ~ "S. Sudan",
+  mor1$Pais == "Trinidad and tobago" ~ "Trinidad and Tobago",
+  mor1$Pais == "Turkey (Turkiye)" ~ "Turkey",
+  TRUE ~ mor1$Pais)
+
+# Verificar los cambios
+paises13 <- unique(mor1$Pais)
+
+```
+
+### Mapa de clusters
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, results='asis'}
+library(ggplot2)
+library(ggrepel)
+library(rnaturalearth)
+library(showtext)
+
+# Cargar datos de mapas
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# Eliminar la Antártida
+world <- world[world$name != "Antarctica", ]
+
+# Unir datos de mapas con tus datos existentes
+merged_data <- merge(world, mor1, by.x = "name", by.y = "Pais", all.x = TRUE)
+
+# Crear columna para indicar los países no seleccionados
+merged_data$no_seleccionado <- is.na(merged_data$dianaMor)
+
+# Cargar fuente personalizada
+font_add_google("Nanum Myeongjo", "Nanum Myeongjo")
+
+# Establecer la fuente para el gráfico
+showtext_auto()
+
+# Gráfico base
+base <- ggplot() +
+  geom_sf(data = world, fill = "#F0F0F0", color = "#535353") +
+  labs(subtitle = NULL) +
+  theme_bw() +
+  theme(plot.title = element_text(family = "sans", size = 18, face = "bold", hjust = 0.5),
+        legend.text = element_text(family = "sans", face = "bold"),
+        legend.title = element_text(family = "sans", face = "bold"),
+        text = element_text(size = 14))  # Aumentar el tamaño de las letras
+
+# Gráfico de Diana
+dianaPlot <- base +
+  geom_sf(data = merged_data, aes(fill = dianaMor), color = "#535353", size = 0.5) +
+  scale_fill_manual(values = c("#B2182B", "#F4A582"),
+                    labels = c("Riesgo alto", "Riesgo moderado"),
+                    na.value = "#F0F0F0",
+                    guide = guide_legend(override.aes = list(fill = c("#B2182B", "#F4A582", "#F0F0F0")))) +
+  theme(legend.position = "right") +
+  labs(fill = "Mortalidad Infantil")
+
+# Etiquetas de países mal clusterizados
+dianaPlot +
+  geom_text_repel(data = subset(merged_data, dianaMorpoor), aes(label = name),
+                  max.overlaps = 50, min.segment.length = unit(0, 'lines'),
+                  color = "#333333", size = 6, fontface = "plain", family = "Nanum Myeongjo")  # Aumentar el tamaño de las letras y cambiar la fuente
+
+
+```
+
+# Conclusión
+
+El último gráfico proporciona una comprensión visual y clara del gráfico DIANA mencionado anteriormente, lo que facilita la interpretación de los resultados y la elaboración de la conclusión. Se pueden identificar dos grupos distintos: uno con riesgo moderado representado en color naranja y otro con riesgo alto representado en color rojo.
+
+En el grupo de riesgo moderado se encuentran países destacados en salud pública que han logrado importantes avances en la prevención de la mortalidad infantil, como los países europeos. Sin embargo, también se incluyen en este grupo algunos países que aún enfrentan desafíos en este aspecto, como los países de América Latina y Oriente Medio.
+
+Por otro lado, el grupo de riesgo alto está compuesto principalmente por países africanos, lo cual confirma la percepción general de que África es el continente más afectado por la mortalidad infantil. Este resultado se respalda en variables como la expectativa de vida, la atención prenatal y el índice de saneamiento, las cuales han demostrado tener un fuerte impacto en la mortalidad infantil según el presente análisis.
+
+No obstante, es importante tener en cuenta que las razones detrás de estas deficiencias en África son aún más diversas, y pueden ir desde la escasez de recursos hasta la falta de interés y corrupción por parte de los líderes políticos. Por lo tanto, un análisis más exhaustivo al respecto será sumamente valioso. Aun así, el aporte del presente análisis es importante porque contribuye a informar a las autoridades y organismos internacionales sobre la situación actual, lo cual incentivará la necesaria implementación de políticas en materia de salud infatil, y servirá como recordatorio del largo camino que aún queda por recorrer para garantizar el desarrollo y el bienestar de las futuras generaciones.
+
+En el caso particular de Perú, si bien se encuentra en el grupo de riesgo moderado, la realidad de su sistema de salud dista mucho de ser satisfactoria. Por lo tanto, es necesario reiterar la importancia de mejorar las políticas de atención prenatal, los sistemas de saneamiento y el acceso a estos servicios en el país, con el objetivo de reducir la mortalidad infantil y garantizar, en general, un mejor servicio de salud para todos los ciudadanos.
+
+En resumen, es fundamental continuar trabajando en la mejora de las condiciones de salud y bienestar de los países, aprovechando los resultados obtenidos a través de este análisis y recordando la importancia de abordar los desafíos específicos de cada región y país. Solo a través de un esfuerzo sostenido y una atención constante a estas problemáticas podremos lograr un futuro mejor para las generaciones venideras.
+
+
+# Bibliografía
+
+United Nations Inter-Agency Group for Child Mortality Estimation (UN IGME) (2021). Levels and trends in child mortality, consultado el 3 de Julio de 2023.https://data.unicef.org/resources/levels-and-trends-in-child-mortality-2021/
+
+United Nations, United Nations Millennium Development Goals website, consultado el 3 de Julio de 2023. https://www.un.org/millenniumgoals/bkgd.shtml
+
+León López, Rogelio, Gallegos Machado, Bárbara, Estévez Rodríguez, Eduardo, & Rodríguez García, Sonia. (1998). Mortalidad infantil: Análisis de un decenio. Revista Cubana de Medicina General Integral, 14(6), 606-610. <https://www.cia.gov/the-world-factbook/references/guide-to-country-comparisons>
